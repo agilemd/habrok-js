@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.2.0 &ndash; February 16, 2018
+- :sparkles: Add support for optional arguments `onRetriableFailure` and `debugRequest` for the `habrok.request` method.
 
 ## 2.1.0 &ndash; September 11, 2017
 
