@@ -291,6 +291,21 @@ describe('Habrok#request with a retried HTTP error (429) and max wait', () => {
     });
   });
 
+  it('calls debugRequest when provided with correct parameters', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const debugRequest = sinon.stub();
+
+    return habrok.request({ method, uri }, { debugRequest })
+    .then(() => { throw new Error('fail test'); })
+    .catch(() => {
+      expect(debugRequest.callCount).to.equal(1);
+
+      const args = debugRequest.getCall(0).args;
+      expect(args[0].attempts).to.equal(habrok.RETRIES);
+    });
+  });
+
   it('rejects within expected elapsed time', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
