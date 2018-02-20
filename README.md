@@ -155,10 +155,37 @@ habrok.request(req[, options])
 | Property | Type | Description | Default |
 | :------- | :--- | :---------- | :------ |
 | `attempt` | `Number` | Integer indicating current request sequence number | *None* |
-| `onRetriableFailure` | `Function` | A function executed whenever Habrok retries a request. As an argument, it will pass in an object with same properties returned by a `habrok.request`. | *None* |
+| `onRetry` | `Function` | A function executed whenever Habrok retries a request. As an argument, it will pass in an object with same properties returned by a `habrok.request`. | *None* |
 | `debugRequest` | `Function` | A function called after making a successful request or after the maximum number of attempts is met.  As an argument, it will pass in an object with the property `attempt`, the number of attempts made.| *None* |
 
 Generally, `attempt` is not needed. The internal retry engine will pass the current attempt count into the next request. Override only as necessary &ndash; e.g. in cases where the retry logic should be bypassed.
+
+
+##### onRetry(statusCode, error)
+**Parameters**
+| Parameter | Type | Description |
+| :-------- | :--- | :---------- |
+| statusCode | `Number` | The [HTTP status code](https://httpstatuses.com/) of the request that necessitated this retry. |
+| error | `Object` | A [boom-js](https://github.com/hapijs/boom) error. |
+
+**Returns**
+*None*
+
+
+##### debugRequest(debugInfo)
+**Parameters**
+| Parameter | Type | Description |
+| :-------- | :--- | :---------- |
+| debugInfo | `Object` | An object containing information about the series of requests.|
+
+**debugInfo**
+| Key | Type | Description |
+| :-------- | :--- | :---------- |
+| `attempts` | `Number` | The total number of http requests made for a `habrok.request`. If retries is set to 0, and this will always be 1.|
+
+**Returns**
+*None*
+
 
 #### Returns
 
