@@ -515,7 +515,7 @@ describe('Habrok#request with request.js error', () => {
 describe('Habrok#request with 2 failed requests, then success', () => {
   const body = { x: uuid.v4() };
   const firstErrorResponse = { statusCode: 502, headers: { z: uuid.v4() } };
-  const secondErrorResponse = { statusCode: 502, headers: { z: uuid.v4() } };
+  const secondErrorResponse = { statusCode: 503, headers: { z: uuid.v4() } };
   const goodResponse = { statusCode: 200, headers: { z: uuid.v4() } };
 
   let habrok;
@@ -547,33 +547,31 @@ describe('Habrok#request with 2 failed requests, then success', () => {
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
 
     return habrok.request({ method, uri })
-    .then(() => { throw new Error('fail test'); })
-    .catch(() => {
+    .then(() => {
       expect(request.callCount).to.equal(3);
     });
   });
+
   it('debugRequest returns 3 attempts', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
     const debugRequest = sinon.stub();
 
     return habrok.request({ method, uri }, { debugRequest })
-    .then(() => { throw new Error('fail test'); })
-    .catch(() => {
+    .then(() => {
       expect(debugRequest.callCount).to.equal(1);
-
       const args = debugRequest.getCall(0).args;
       expect(args[0].attempts).to.equal(3);
     });
   });
+
   it('onRetry is passed the correct args', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
     const onRetry = sinon.stub();
 
     return habrok.request({ method, uri }, { onRetry })
-    .then(() => { throw new Error('fail test'); })
-    .catch(() => {
+    .then(() => {
       expect(onRetry.callCount).to.equal(2);
 
       const firstCallArgs = onRetry.getCall(0).args;
