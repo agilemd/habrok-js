@@ -212,6 +212,7 @@ describe('Habrok#request with a retried HTTP error (429)', () => {
       expect(request.callCount).to.equal(habrok.RETRIES);
     });
   });
+
   it('onRetry is called for every retry', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
@@ -223,7 +224,6 @@ describe('Habrok#request with a retried HTTP error (429)', () => {
       expect(onRetry.callCount).to.equal(habrok.RETRIES - 1);
     });
   });
-
 
   it('rejects with a Boom#tooManyRequests error', () => {
     const method = 'GET';
@@ -560,6 +560,7 @@ describe('Habrok#request with 2 failed requests, then success', () => {
     return habrok.request({ method, uri }, { debugRequest })
     .then(() => {
       expect(debugRequest.callCount).to.equal(1);
+
       const args = debugRequest.getCall(0).args;
       expect(args[0].attempts).to.equal(3);
     });
@@ -580,5 +581,4 @@ describe('Habrok#request with 2 failed requests, then success', () => {
       expect(secondCallArgs[0]).to.equal(secondErrorResponse.statusCode);
     });
   });
-
 });
