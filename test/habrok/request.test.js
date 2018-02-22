@@ -213,6 +213,18 @@ describe('Habrok#request with a retried HTTP error (429)', () => {
     });
   });
 
+  it('onRetry is called for every retry', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const onRetry = sinon.stub();
+
+    return habrok.request({ method, uri }, { onRetry })
+    .then(() => { throw new Error('fail test'); })
+    .catch(() => {
+      expect(onRetry.callCount).to.equal(habrok.RETRIES - 1);
+    });
+  });
+
   it('rejects with a Boom#tooManyRequests error', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
@@ -288,6 +300,21 @@ describe('Habrok#request with a retried HTTP error (429) and max wait', () => {
     .then(() => { throw new Error('fail test'); })
     .catch(() => {
       expect(request.callCount).to.equal(habrok.RETRIES);
+    });
+  });
+
+  it('calls debugRequest when provided with correct parameters', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const debugRequest = sinon.stub();
+
+    return habrok.request({ method, uri }, { debugRequest })
+    .then(() => { throw new Error('fail test'); })
+    .catch(() => {
+      expect(debugRequest.callCount).to.equal(1);
+
+      const args = debugRequest.getCall(0).args;
+      expect(args[0].attempts).to.equal(habrok.RETRIES);
     });
   });
 
@@ -481,6 +508,77 @@ describe('Habrok#request with request.js error', () => {
     .catch((err) => {
       expect(err).to.match(/invalid input/);
       expect(err.isBoom).to.equal(undefined);
+    });
+  });
+});
+
+describe('Habrok#request with 2 failed requests, then success', () => {
+  const body = { x: uuid.v4() };
+  const firstErrorResponse = { statusCode: 502, headers: { z: uuid.v4() } };
+  const secondErrorResponse = { statusCode: 503, headers: { z: uuid.v4() } };
+  const goodResponse = { statusCode: 200, headers: { z: uuid.v4() } };
+
+  let habrok;
+  let request;
+
+  beforeEach(() => {
+    mockery.enable({
+      warnOnReplace: false,
+      warnOnUnregistered: false,
+      useCleanCache: true
+    });
+
+    request = sinon.stub();
+    request.onFirstCall().yields(null, firstErrorResponse, body)
+      .onSecondCall().yields(null, secondErrorResponse, body)
+      .onThirdCall().yields(null, goodResponse, body);
+    mockery.registerMock('request', request);
+
+    habrok = require('../../index')({ retryMinDelay: 0 });
+  });
+
+  afterEach(() => {
+    mockery.deregisterAll();
+    mockery.disable();
+  });
+
+  it('stop retrying after success', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+
+    return habrok.request({ method, uri })
+    .then(() => {
+      expect(request.callCount).to.equal(3);
+    });
+  });
+
+  it('debugRequest returns 3 attempts', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const debugRequest = sinon.stub();
+
+    return habrok.request({ method, uri }, { debugRequest })
+    .then(() => {
+      expect(debugRequest.callCount).to.equal(1);
+
+      const args = debugRequest.getCall(0).args;
+      expect(args[0].attempts).to.equal(3);
+    });
+  });
+
+  it('onRetry is passed the correct args', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const onRetry = sinon.stub();
+
+    return habrok.request({ method, uri }, { onRetry })
+    .then(() => {
+      expect(onRetry.callCount).to.equal(2);
+
+      const firstCallArgs = onRetry.getCall(0).args;
+      expect(firstCallArgs[0]).to.equal(firstErrorResponse.statusCode);
+      const secondCallArgs = onRetry.getCall(1).args;
+      expect(secondCallArgs[0]).to.equal(secondErrorResponse.statusCode);
     });
   });
 });
