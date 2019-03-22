@@ -45,6 +45,29 @@ describe('Habrok#request', () => {
     });
   });
 
+  it('sets default timeout', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+
+    return habrok.request({ method, uri }).then(() => {
+      const req = request.getCall(0).args[0];
+
+      expect(req.timeout).to.equal(30000);
+    });
+  });
+
+  it('overrides default timeout', () => {
+    const timeout = Date.now();
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+
+    return habrok.request({ method, uri, timeout }).then(() => {
+      const req = request.getCall(0).args[0];
+
+      expect(req.timeout).to.equal(timeout);
+    });
+  });
+
   it('invokes requestjs with default headers', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
