@@ -45,6 +45,29 @@ describe('Habrok#request', () => {
     });
   });
 
+  it('sets default timeout', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+
+    return habrok.request({ method, uri }).then(() => {
+      const req = request.getCall(0).args[0];
+
+      expect(req.timeout).to.equal(30000);
+    });
+  });
+
+  it('overrides default timeout', () => {
+    const timeout = Date.now();
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+
+    return habrok.request({ method, uri, timeout }).then(() => {
+      const req = request.getCall(0).args[0];
+
+      expect(req.timeout).to.equal(timeout);
+    });
+  });
+
   it('invokes requestjs with default headers', () => {
     const method = 'GET';
     const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
@@ -212,6 +235,18 @@ describe('Habrok#request with a retried HTTP error (429)', () => {
       expect(request.callCount).to.equal(habrok.RETRIES);
     });
   });
+  it('onRetry is called for every retry', () => {
+    const method = 'GET';
+    const uri = `https://api.viki.ng/longships/${uuid.v4()}`;
+    const onRetry = sinon.stub();
+
+    return habrok.request({ method, uri }, { onRetry })
+    .then(() => { throw new Error('fail test'); })
+    .catch(() => {
+      expect(onRetry.callCount).to.equal(habrok.RETRIES - 1);
+    });
+  });
+
 
   it('onRetry is called for every retry', () => {
     const method = 'GET';
@@ -560,7 +595,6 @@ describe('Habrok#request with 2 failed requests, then success', () => {
     return habrok.request({ method, uri }, { debugRequest })
     .then(() => {
       expect(debugRequest.callCount).to.equal(1);
-
       const args = debugRequest.getCall(0).args;
       expect(args[0].attempts).to.equal(3);
     });
